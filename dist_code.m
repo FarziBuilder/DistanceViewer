@@ -2,7 +2,7 @@ clear; clc;
 
 %% Step 1: Read the Flight Log Data
 % Replace the file path with the location of your flight log.
-bin = ardupilotreader('logs/flight5.bin');
+bin = ardupilotreader('logs/hyd_26_flight.bin');
 
 %% Step 2: Extract GPS Messages
 gpsMsg = readMessages(bin, 'MessageName', {'GPS'});
@@ -52,7 +52,10 @@ t10to0 = modeData.Properties.RowTimes(ind10to0);
 
 d1 = duration(string(t0to10),'InputFormat','hh:mm:ss.SSSSSS');
 d2 = duration(string(t10to0),'InputFormat','hh:mm:ss.SSSSSS');
-% 
+d1 = d1(1);
+d2 = d2(end);
+disp(d1);
+disp(d2);
 % %% Step 4: Subset the GPS Data Based on the Time Window
 idx = gpsData.timestamp >= d1 & gpsData.timestamp <= d2;
 gpsSubset = gpsData(idx,:);
