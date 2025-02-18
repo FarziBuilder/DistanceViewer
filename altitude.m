@@ -1,19 +1,34 @@
-% Example: Plot the Altitude from ArduPilot BIN log
 clear; clc;
 
-% 1) Read the Flight Log Data
-bin = ardupilotreader('logs/flight5.bin');  % <-- change path accordingly
+%% 1. Create an ardupilotreader object for your log file
+ardupilotObj = ardupilotreader("logs/hyd_26_flight.bin");  % Adjust the path as needed
 
-% 2) Extract GPS Messages (the altitude is typically in the GPS message, 
-%    but could also be in BARO message or elsewhere, depending on your log)
-gpsMsg = readMessages(bin, 'MessageName', {'GPS'});
+%% 2. Read the AHR2 message (which holds the fused state data)
+ahrsMsg = readMessages(ardupilotObj, 'MessageName', {'AHR2'});
+ahrsData = ahrsMsg.MsgData{1,1};
 
-% 3) Extract the GPS data (assumed to be in the first element of MsgData).
-gpsData = gpsMsg.MsgData{1,1};
+disp('Available variables in AHR2:');
+disp(ahrsData.Properties.VariableNames);
 
-figure;
-plot(gpsData.timestamp, gpsData.Alt);
-xlabel('Time (duration)');
-ylabel('Altitude (m)');   % Adjust if your data is in centimeters
-title('Altitude from GPS Data');
+%% 3. Convert to a timetable if necessary and sort by time
+% The first column 'TimeUS' represents time in microseconds.
+if ~istimetable(ahrsData)
+    ahrsData = table2timetable(ahrsData, 'RowTimes','TimeUS');
+end
+ahrsData = sortrows(ahrsData);
+
+%% 4. Compute the altitude
+% In this log, PD is the downward position.
+% Altitude above the reference is given by -PD.
+altitude2 = ahrsData.Alt;
+
+%% 5. Convert TimeUS to seconds (if TimeUS is in microseconds)
+%timeSec = double(ahrsData.TimeUS) / 1e6;
+
+%% 6. Plot the altitude
+figure('Name','Fused Altitude from AHR2');
+plot(ahrsData.timestamp, altitude2, 'b.-');
 grid on;
+xlabel('Time (sec)');
+ylabel('Altitude (units)');  % Verify the units (e.g., cm or m) based on your log
+title('Fused Altitude Considered by the Plane (Altitude = -PD)');
