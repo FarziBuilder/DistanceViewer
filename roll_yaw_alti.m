@@ -3,28 +3,7 @@ clear; clc;
 % Get all .bin log files in the "logs" folder
 logFiles = dir('logs/*.bin');
 
-% Create a figure with two subplots for Roll vs. Altitude and Pitch vs. Altitude
-figure('Name','Roll & Pitch vs Altitude (All Logs)');
-
-% Setup first subplot: Roll vs. Altitude
-subplot(2,1,1);
-hold on;
-xlabel('Altitude (m or ft)');
-ylabel('Roll (deg)');
-title('Roll vs. Altitude');
-set(gca, 'XDir', 'reverse');  % Reverse x-axis direction
-grid on;
-
-% Setup second subplot: Pitch vs. Altitude
-subplot(2,1,2);
-hold on;
-xlabel('Altitude (m or ft)');
-ylabel('Pitch (deg)');
-title('Pitch vs. Altitude');
-set(gca, 'XDir', 'reverse');  % Reverse x-axis direction
-grid on;
-
-% Create a colormap to differentiate the flight paths
+% Create a colormap for differentiating lines (optional)
 colors = lines(length(logFiles));
 
 for idx = 1:length(logFiles)
@@ -82,9 +61,6 @@ for idx = 1:length(logFiles)
         continue;
     end
     
-    % For convenience, extract Roll and Pitch (timestamps are in attSubset.timestamp)
-    % (Variable names remain unchanged in attSubset.)
-    
     %% 5. Read AHR2 messages (for altitude) and subset to the same time window
     ahrsMsg = readMessages(ardupilotObj, 'MessageName', {'AHR2'});
     if isempty(ahrsMsg)
@@ -102,29 +78,31 @@ for idx = 1:length(logFiles)
     end
     
     %% 6. Synchronize ATT and AHR2 data on the overlapping timestamps
-    % Using the 'nearest' method to match the closest timestamps
     syncTT = synchronize(attSubset, ahrsSubset, 'common','nearest');
     
-    % Ensure required fields exist after synchronization
     if ~all(ismember({'Roll_attSubset', 'Pitch_attSubset', 'Alt'}, syncTT.Properties.VariableNames))
         warning('Synchronized fields missing in file %s', logFiles(idx).name);
         continue;
     end
     
-    %% 7. Plot Roll vs. Altitude and Pitch vs. Altitude
-    % Plot Roll in the first subplot
-    subplot(2,1,1);
-    plot(syncTT.Alt, syncTT.Roll_attSubset, '.-', 'Color', colors(idx,:), ...
-         'DisplayName', logFiles(idx).name);
+    %% 7. Create a new figure for this log file
+    fig = figure('Name', sprintf('Roll & Pitch vs Altitude: %s', logFiles(idx).name));
     
-    % Plot Pitch in the second subplot
+    % --- Subplot 1: Roll vs Altitude ---
+    subplot(2,1,1);
+    plot(syncTT.Alt, syncTT.Roll_attSubset, '.-', 'Color', colors(idx,:), 'LineWidth', 1.5);
+    set(gca, 'XDir', 'reverse');  % Reverse x-axis direction
+    grid on;
+    xlabel('Altitude (m or ft)');
+    ylabel('Roll (deg)');
+    title(sprintf('Roll vs. Altitude for %s', logFiles(idx).name));
+    
+    % --- Subplot 2: Pitch vs Altitude ---
     subplot(2,1,2);
-    plot(syncTT.Alt, syncTT.Pitch_attSubset, '.-', 'Color', colors(idx,:), ...
-         'DisplayName', logFiles(idx).name);
+    plot(syncTT.Alt, syncTT.Pitch_attSubset, '.-', 'Color', colors(idx,:), 'LineWidth', 1.5);
+    set(gca, 'XDir', 'reverse');  % Reverse x-axis direction
+    grid on;
+    xlabel('Altitude (m or ft)');
+    ylabel('Pitch (deg)');
+    title(sprintf('Pitch vs. Altitude for %s', logFiles(idx).name));
 end
-
-% Add legends to both subplots
-subplot(2,1,1);
-legend('show', 'Location','best');
-subplot(2,1,2);
-legend('show', 'Location','best');
