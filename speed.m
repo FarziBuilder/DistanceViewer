@@ -61,10 +61,10 @@ for idx = 1:length(logFiles)
     end
     
     % Extract GPS fields
-    lat    = gpsSubset.Lat;    % Latitude in degrees
-    lon    = gpsSubset.Lng;    % Longitude in degrees
-    alt    = gpsSubset.Alt;    % Altitude in meters
-    timeVec = gpsSubset.timestamp; % Duration array
+    lat    = gpsSubset.Lat;       % Latitude in degrees
+    lon    = gpsSubset.Lng;       % Longitude in degrees
+    alt    = gpsSubset.Alt;       % Altitude in meters
+    timeVec = gpsSubset.timestamp;  % Duration array
     
     %% Step 4: Compute horizontal distance between consecutive samples
     distDeg = distance(lat(1:end-1), lon(1:end-1), lat(2:end), lon(2:end));
@@ -83,9 +83,20 @@ for idx = 1:length(logFiles)
     %% Step 6: Compute total velocity (m/s)
     totalVelocity = sqrt(horizontalVelocity.^2 + verticalVelocity.^2);
     
-    %% Step 7: Plot velocities vs. time on a new figure for this log file
+    %% Step 7: Remove any value where any velocity exceeds 400 m/s
+    % Create a logical index for valid values
+    validIdx = (horizontalVelocity < 300) & (verticalVelocity < 300) & (totalVelocity < 300);
+    
+    % Associate each velocity with the starting time of its interval
     plotTime = timeVec(1:end-1);
     
+    % Apply the filter
+    plotTime = plotTime(validIdx);
+    horizontalVelocity = horizontalVelocity(validIdx);
+    verticalVelocity   = verticalVelocity(validIdx);
+    totalVelocity      = totalVelocity(validIdx);
+    
+    %% Step 8: Plot velocities vs. time on a new figure for this log file
     figure('Name', sprintf('Flight Velocities: %s', logFiles(idx).name));
     hold on;
     plot(plotTime, horizontalVelocity, 'LineWidth', 1.5, 'DisplayName', 'Horizontal Vel');
