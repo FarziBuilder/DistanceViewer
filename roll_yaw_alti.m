@@ -49,7 +49,7 @@ for idx = 1:length(logFiles)
     t0to10 = modeData.Properties.RowTimes(ind0to10);
     t10to0 = modeData.Properties.RowTimes(ind10to0);
     
-    % Convert row times to durations (using a fixed input format)
+    % Convert row times to durations
     d1 = duration(string(t0to10), 'InputFormat','hh:mm:ss.SSSSSS'); d1 = d1(1);
     d2 = duration(string(t10to0), 'InputFormat','hh:mm:ss.SSSSSS'); d2 = d2(end);
     
@@ -80,29 +80,38 @@ for idx = 1:length(logFiles)
     %% 6. Synchronize ATT and AHR2 data on the overlapping timestamps
     syncTT = synchronize(attSubset, ahrsSubset, 'common','nearest');
     
-    if ~all(ismember({'Roll_attSubset', 'Pitch_attSubset', 'Alt'}, syncTT.Properties.VariableNames))
+    if ~all(ismember({'Roll_attSubset', 'Pitch_attSubset', 'Yaw_attSubset', 'Alt'}, syncTT.Properties.VariableNames))
         warning('Synchronized fields missing in file %s', logFiles(idx).name);
         continue;
     end
     
     %% 7. Create a new figure for this log file
-    fig = figure('Name', sprintf('Roll & Pitch vs Altitude: %s', logFiles(idx).name));
+    fig = figure('Name', sprintf('Roll, Pitch & Yaw vs Altitude: %s', logFiles(idx).name));
     
     % --- Subplot 1: Roll vs Altitude ---
-    subplot(2,1,1);
+    subplot(3,1,1);
     plot(syncTT.Alt, syncTT.Roll_attSubset, '.-', 'Color', colors(idx,:), 'LineWidth', 1.5);
-    set(gca, 'XDir', 'reverse');  % Reverse x-axis direction
+    set(gca, 'XDir', 'reverse'); % Reverse x-axis direction
     grid on;
     xlabel('Altitude (m or ft)');
     ylabel('Roll (deg)');
     title(sprintf('Roll vs. Altitude for %s', logFiles(idx).name));
     
     % --- Subplot 2: Pitch vs Altitude ---
-    subplot(2,1,2);
+    subplot(3,1,2);
     plot(syncTT.Alt, syncTT.Pitch_attSubset, '.-', 'Color', colors(idx,:), 'LineWidth', 1.5);
-    set(gca, 'XDir', 'reverse');  % Reverse x-axis direction
+    set(gca, 'XDir', 'reverse'); % Reverse x-axis direction
     grid on;
     xlabel('Altitude (m or ft)');
     ylabel('Pitch (deg)');
     title(sprintf('Pitch vs. Altitude for %s', logFiles(idx).name));
+    
+    % --- Subplot 3: Yaw vs Altitude ---
+    subplot(3,1,3);
+    plot(syncTT.Alt, syncTT.Yaw_attSubset, '.-', 'Color', colors(idx,:), 'LineWidth', 1.5);
+    set(gca, 'XDir', 'reverse'); % Reverse x-axis direction
+    grid on;
+    xlabel('Altitude (m or ft)');
+    ylabel('Yaw (deg)');
+    title(sprintf('Yaw vs. Altitude for %s', logFiles(idx).name));
 end
